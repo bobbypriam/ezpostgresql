@@ -1,0 +1,7 @@
+(jbuild_version 1)
+
+(library
+  ((name ezpostgresql)
+   (public_name ezpostgresql)
+   (wrapped false)
+   (libraries ())))

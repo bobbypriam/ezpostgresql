@@ -1,0 +1,16 @@
+opam-version: "2.0"
+name: "ezpostgresql"
+version: "0.1.0"
+maintainer: "Bobby Priambodo <bobby.priambodo@gmail.com>"
+authors: ["Bobby Priambodo <bobby.priambodo@gmail.com>"]
+homepage: "https://github.com/bobbypriambodo/ezpostgresql"
+bug-reports: "https://github.com/bobbypriambodo/ezpostgresql/issues"
+dev-repo: "git+https://github.com/bobbypriambodo/ezpostgresql"
+license: ["MIT"]
+build: [["jbuilder" "build" "-p" name "-j" jobs]]
+depends: [
+  "jbuilder" {build}
+  "postgresql"
+  "alcotest" {test}
+]
+run-test: ["jbuilder" "runtest" "-p" name "-j" jobs]
