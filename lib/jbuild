@@ -4,4 +4,4 @@
   ((name ezpostgresql)
    (public_name ezpostgresql)
    (wrapped false)
-   (libraries ())))
+   (libraries (postgresql lwt.unix lwt.preemptive))))
