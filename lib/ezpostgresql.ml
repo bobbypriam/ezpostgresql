@@ -17,6 +17,12 @@ let all ~query ?(params=[||]) conn =
       result#get_all
     ) conn
 
+let command ~query ?(params=[||]) conn =
+  Lwt_preemptive.detach (fun (c : connection) ->
+      let _ = c#exec ~expect:[Postgresql.Command_ok] ~params query in
+      ()
+    ) conn
+
 module Pool = struct
 
   let create ~conninfo ~size () =
