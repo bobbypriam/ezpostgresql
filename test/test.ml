@@ -72,12 +72,12 @@ let tests = [
   "command", [
     Alcotest_lwt.test_case "could run `command` query" `Quick (fun _ _ ->
         let%lwt conn = Ezpostgresql.connect ~conninfo () in
-        let%lwt () = Ezpostgresql.command "
+        let%lwt () = Ezpostgresql.command ~query:"
           CREATE TEMP TABLE test_data (some_num INTEGER NOT NULL)
         " conn in
-        let%lwt () = Ezpostgresql.command "
-          INSERT INTO test_data VALUES (2)
-        " conn in
+        let%lwt () = Ezpostgresql.command ~query:"
+          INSERT INTO test_data VALUES ($1)
+        " ~params:[| (string_of_int 2) |] conn in
         let%lwt res = Ezpostgresql.one "
           SELECT some_num FROM test_data
         " conn in
@@ -131,10 +131,10 @@ let tests = [
   "Pool.command", [
     Alcotest_lwt.test_case "could run `command` query" `Quick (fun _ _ ->
         let pool = Ezpostgresql.Pool.create ~conninfo ~size:10 () in
-        let%lwt () = Ezpostgresql.Pool.command "
+        let%lwt () = Ezpostgresql.Pool.command ~query:"
           CREATE TEMP TABLE test_data (some_num INTEGER NOT NULL)
         " pool in
-        let%lwt () = Ezpostgresql.Pool.command "
+        let%lwt () = Ezpostgresql.Pool.command ~query:"
           INSERT INTO test_data VALUES (2)
         " pool in
         let%lwt res = Ezpostgresql.Pool.one "
