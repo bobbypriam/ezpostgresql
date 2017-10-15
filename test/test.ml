@@ -61,7 +61,23 @@ let tests = [
         " conn in
 
         let () = tear_down () in
-        Lwt.return @@ Alcotest.(check (int)) "same string" 2 (Array.length res)
+        Lwt.return @@ Alcotest.(check (int)) "same int" 2 (Array.length res)
+      )
+  ];
+
+  "command", [
+    Alcotest_lwt.test_case "could run `command` query" `Quick (fun _ _ ->
+        let%lwt conn = Ezpostgresql.connect ~conninfo () in
+        let%lwt () = Ezpostgresql.command "
+          CREATE TEMP TABLE test_data (some_num INTEGER NOT NULL)
+        " conn in
+        let%lwt () = Ezpostgresql.command "
+          INSERT INTO test_data VALUES (2)
+        " conn in
+        let%lwt res = Ezpostgresql.one "
+          SELECT some_num FROM test_data
+        " conn in
+        Lwt.return @@ Alcotest.(check (int)) "same int" 2 (int_of_string res.(0))
       )
   ];
 
@@ -102,7 +118,7 @@ let tests = [
         " pool in
 
         let () = tear_down () in
-        Lwt.return @@ Alcotest.(check (int)) "same string" 2 (Array.length res)
+        Lwt.return @@ Alcotest.(check (int)) "same int" 2 (Array.length res)
       )
   ];
 
