@@ -144,6 +144,95 @@ let tests = [
       )
   ];
 
+  "Transaction", [
+    Alcotest_lwt.test_case "could run `command` in transaction" `Quick (fun _ _ ->
+        let%lwt conn = Ezpostgresql.connect ~conninfo () in
+
+        let%lwt () = Ezpostgresql.Transaction.begin_ (fun trx ->
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Bobby', 19)
+            " trx in
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Anne', 18)
+            " trx in
+            Ezpostgresql.Transaction.commit trx
+          ) conn in
+
+        let%lwt res = Ezpostgresql.all "
+          SELECT * FROM person
+        " conn in
+
+        let () = tear_down ~conn () in
+        Lwt.return @@ Alcotest.(check (int)) "same int" 2 (Array.length res)
+      );
+
+    Alcotest_lwt.test_case "rollback aborts all commands" `Quick (fun _ _ ->
+        let%lwt conn = Ezpostgresql.connect ~conninfo () in
+
+        let%lwt () = Ezpostgresql.Transaction.begin_ (fun trx ->
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Bobby', 19)
+            " trx in
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Anne', 18)
+            " trx in
+            Ezpostgresql.Transaction.rollback trx
+          ) conn in
+
+        let%lwt res = Ezpostgresql.all "
+          SELECT * FROM person
+        " conn in
+
+        let () = tear_down ~conn () in
+        Lwt.return @@ Alcotest.(check (int)) "same int" 0 (Array.length res)
+      )
+  ];
+
+  "Transaction.Pool", [
+    Alcotest_lwt.test_case "could run `command` in transaction using pool" `Quick (fun _ _ ->
+        let pool = Ezpostgresql.Pool.create ~conninfo ~size:10 () in
+
+        let%lwt () = Ezpostgresql.Transaction.Pool.begin_ (fun trx ->
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Bobby', 19)
+            " trx in
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Anne', 18)
+            " trx in
+            Ezpostgresql.Transaction.commit trx
+          ) pool in
+
+        let%lwt res = Ezpostgresql.Pool.all "
+          SELECT * FROM person
+        " pool in
+
+        let () = tear_down () in
+        Lwt.return @@ Alcotest.(check (int)) "same int" 2 (Array.length res)
+      );
+
+    Alcotest_lwt.test_case "rollback aborts all commands" `Quick (fun _ _ ->
+        let pool = Ezpostgresql.Pool.create ~conninfo ~size:10 () in
+
+        let%lwt () = Ezpostgresql.Transaction.Pool.begin_ (fun trx ->
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Bobby', 19)
+            " trx in
+            let%lwt () = Ezpostgresql.Transaction.command ~query:"
+              INSERT INTO person VALUES ('Anne', 18)
+            " trx in
+            Ezpostgresql.Transaction.rollback trx
+          ) pool in
+
+        let%lwt res = Ezpostgresql.Pool.all "
+          SELECT * FROM person
+        " pool in
+
+        let () = tear_down () in
+        Lwt.return @@ Alcotest.(check (int)) "same int" 0 (Array.length res)
+      )
+
+  ];
+
 ]
 
 let _ =

@@ -1,3 +1,5 @@
+open Lwt.Infix
+
 type connection = Postgresql.connection
 
 let connect ~conninfo =
@@ -30,6 +32,8 @@ let finish conn =
 
 module Pool = struct
 
+  type t = connection Lwt_pool.t
+
   let create ~conninfo ~size () =
     Lwt_pool.create size (connect ~conninfo)
 
@@ -41,5 +45,33 @@ module Pool = struct
 
   let command ~query ?(params=[||]) pool =
     Lwt_pool.use pool (command ~query ~params)
+
+end
+
+module Transaction = struct
+
+  type t = connection
+
+  let begin_ (f : t -> unit Lwt.t) (conn : connection) =
+    command ~query:"BEGIN" conn >>= fun () ->
+    f conn
+
+  let commit (trx : t) =
+    command ~query:"COMMIT" trx
+
+  let rollback (trx : t) =
+    command ~query:"ROLLBACK" trx
+
+  let one = one
+  let all = all
+  let command = command
+
+
+  module Pool = struct
+
+    let begin_ (f : t -> unit Lwt.t) pool =
+      Lwt_pool.use pool (begin_ f)
+
+  end
 
 end
