@@ -34,4 +34,7 @@ module Pool = struct
   let all ~query ?(params=[||]) pool =
     Lwt_pool.use pool (all ~query ~params)
 
+  let command ~query ?(params=[||]) pool =
+    Lwt_pool.use pool (command ~query ~params)
+
 end
