@@ -3,7 +3,7 @@ let conninfo = "host=localhost"
 let raw_execute query =
   let conn = new Postgresql.connection ~conninfo () in
   let _ = conn#exec ~expect:[Postgresql.Command_ok] query in
-  ()
+  conn#finish
 
 let create_test_table () =
   raw_execute "
@@ -18,17 +18,22 @@ let drop_test_table () =
     DROP TABLE IF EXISTS person
   "
 
-let tear_down () =
+let tear_down ?conn () =
   raw_execute "
     TRUNCATE TABLE person
-  "
+  ";
+  match conn with
+  | None -> ()
+  | Some c -> c#finish
 
 let tests = [
 
   "connect", [
     Alcotest_lwt.test_case "could connect" `Quick (fun _ _ ->
         let%lwt conn = Ezpostgresql.connect ~conninfo () in
-        Lwt.return @@ Alcotest.(check (string)) "same string" "localhost" conn#host
+        let host = conn#host in
+        let%lwt () = Ezpostgresql.finish conn in
+        Lwt.return @@ Alcotest.(check (string)) "same string" "localhost" host
       )
   ];
 
@@ -44,7 +49,7 @@ let tests = [
             SELECT * FROM person WHERE name = $1
           " ~params:[| "Bobby" |] conn in
 
-        let () = tear_down () in
+        let () = tear_down ~conn () in
         Lwt.return @@ Alcotest.(check (string)) "same string" "Bobby" (res.(0))
       )
   ];
@@ -60,7 +65,7 @@ let tests = [
           SELECT * FROM person
         " conn in
 
-        let () = tear_down () in
+        let () = tear_down ~conn () in
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (Array.length res)
       )
   ];
@@ -77,6 +82,7 @@ let tests = [
         let%lwt res = Ezpostgresql.one "
           SELECT some_num FROM test_data
         " conn in
+        let () = tear_down ~conn () in
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (int_of_string res.(0))
       )
   ];
@@ -137,7 +143,6 @@ let tests = [
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (int_of_string res.(0))
       )
   ];
-
 
 ]
 

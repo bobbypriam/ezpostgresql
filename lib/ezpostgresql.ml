@@ -23,6 +23,11 @@ let command ~query ?(params=[||]) conn =
       ()
     ) conn
 
+let finish conn =
+  Lwt_preemptive.detach (fun (c : connection) ->
+      c#finish
+    ) conn
+
 module Pool = struct
 
   let create ~conninfo ~size () =
