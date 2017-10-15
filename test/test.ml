@@ -18,13 +18,10 @@ let drop_test_table () =
     DROP TABLE IF EXISTS person
   "
 
-let tear_down ?conn () =
+let tear_down () =
   raw_execute "
     TRUNCATE TABLE person
-  ";
-  match conn with
-  | None -> ()
-  | Some c -> c#finish
+  "
 
 let tests = [
 
@@ -49,7 +46,8 @@ let tests = [
             SELECT * FROM person WHERE name = $1
           " ~params:[| "Bobby" |] conn in
 
-        let () = tear_down ~conn () in
+        let%lwt () = Ezpostgresql.finish conn in
+        let () = tear_down () in
         Lwt.return @@ Alcotest.(check (string)) "same string" "Bobby" (res.(0))
       )
   ];
@@ -65,7 +63,8 @@ let tests = [
           SELECT * FROM person
         " conn in
 
-        let () = tear_down ~conn () in
+        let%lwt () = Ezpostgresql.finish conn in
+        let () = tear_down () in
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (Array.length res)
       )
   ];
@@ -82,7 +81,8 @@ let tests = [
         let%lwt res = Ezpostgresql.one "
           SELECT some_num FROM test_data
         " conn in
-        let () = tear_down ~conn () in
+        let%lwt () = Ezpostgresql.finish conn in
+        let () = tear_down () in
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (int_of_string res.(0))
       )
   ];
@@ -162,7 +162,8 @@ let tests = [
           SELECT * FROM person
         " conn in
 
-        let () = tear_down ~conn () in
+        let%lwt () = Ezpostgresql.finish conn in
+        let () = tear_down () in
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (Array.length res)
       );
 
@@ -183,7 +184,8 @@ let tests = [
           SELECT * FROM person
         " conn in
 
-        let () = tear_down ~conn () in
+        let%lwt () = Ezpostgresql.finish conn in
+        let () = tear_down () in
         Lwt.return @@ Alcotest.(check (int)) "same int" 0 (Array.length res)
       )
   ];
