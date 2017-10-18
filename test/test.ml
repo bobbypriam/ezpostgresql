@@ -78,7 +78,7 @@ let tests = [
         let%lwt () = Ezpostgresql.command ~query:"
           INSERT INTO test_data VALUES ($1)
         " ~params:[| (string_of_int 2) |] conn in
-        let%lwt res = Ezpostgresql.one "
+        let%lwt res = Ezpostgresql.one ~query:"
           SELECT some_num FROM test_data
         " conn in
         let%lwt () = Ezpostgresql.finish conn in
@@ -137,7 +137,7 @@ let tests = [
         let%lwt () = Ezpostgresql.Pool.command ~query:"
           INSERT INTO test_data VALUES (2)
         " pool in
-        let%lwt res = Ezpostgresql.Pool.one "
+        let%lwt res = Ezpostgresql.Pool.one ~query:"
           SELECT some_num FROM test_data
         " pool in
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (int_of_string res.(0))
@@ -158,7 +158,7 @@ let tests = [
             Ezpostgresql.Transaction.commit trx
           ) conn in
 
-        let%lwt res = Ezpostgresql.all "
+        let%lwt res = Ezpostgresql.all ~query:"
           SELECT * FROM person
         " conn in
 
@@ -180,7 +180,7 @@ let tests = [
             Ezpostgresql.Transaction.rollback trx
           ) conn in
 
-        let%lwt res = Ezpostgresql.all "
+        let%lwt res = Ezpostgresql.all ~query:"
           SELECT * FROM person
         " conn in
 
@@ -204,7 +204,7 @@ let tests = [
             Ezpostgresql.Transaction.commit trx
           ) pool in
 
-        let%lwt res = Ezpostgresql.Pool.all "
+        let%lwt res = Ezpostgresql.Pool.all ~query:"
           SELECT * FROM person
         " pool in
 
@@ -225,7 +225,7 @@ let tests = [
             Ezpostgresql.Transaction.rollback trx
           ) pool in
 
-        let%lwt res = Ezpostgresql.Pool.all "
+        let%lwt res = Ezpostgresql.Pool.all ~query:"
           SELECT * FROM person
         " pool in
 
