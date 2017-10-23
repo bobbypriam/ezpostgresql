@@ -1,4 +1,6 @@
-let conninfo = "host=localhost"
+let conninfo =
+  try Sys.getenv "DATABASE_URL"
+  with Not_found -> "postgresql://localhost:5432"
 
 let raw_execute query =
   let conn = new Postgresql.connection ~conninfo () in
