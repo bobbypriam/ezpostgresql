@@ -30,9 +30,9 @@ let tests = [
   "connect", [
     Alcotest_lwt.test_case "could connect" `Quick (fun _ _ ->
         let%lwt conn = Ezpostgresql.connect ~conninfo () in
-        let host = conn#host in
+        let pid = conn#backend_pid in
         let%lwt () = Ezpostgresql.finish conn in
-        Lwt.return @@ Alcotest.(check (string)) "same string" "localhost" host
+        Lwt.return @@ Alcotest.(check (bool)) "test" true (pid > 0)
       )
   ];
 
@@ -93,7 +93,7 @@ let tests = [
     Alcotest_lwt.test_case "could use connection from pool" `Quick (fun _ _ ->
         let pool = Ezpostgresql.Pool.create ~conninfo ~size:10 () in
         Lwt_pool.use pool (fun c ->
-            Lwt.return @@ Alcotest.(check (string)) "same string" "localhost" c#host
+            Lwt.return @@ Alcotest.(check (bool)) "test" true (c#backend_pid > 0)
           )
       )
   ];
