@@ -13,5 +13,6 @@ depends: [
   "lwt"
   "postgresql"
   "alcotest" {test}
+  "alcotest-lwt" {test}
 ]
 run-test: ["jbuilder" "runtest" "-p" name "-j" jobs]
