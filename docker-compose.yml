@@ -1,0 +1,16 @@
+version: '2'
+services:
+  tester:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: opam config exec make test
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db/test_db
+    links:
+      - db
+  db:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=test_db
