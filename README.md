@@ -1,5 +1,4 @@
-Ezpostgresql
-============
+# Ezpostgresql [![Build Status](https://travis-ci.org/bobbypriambodo/ezpostgresql.svg?branch=master)](https://travis-ci.org/bobbypriambodo/ezpostgresql)
 
 [Lwt](https://github.com/ocsigen/lwt)-friendly wrapper for postgresql-ocaml which supports connection pooling.
 
