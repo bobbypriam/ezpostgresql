@@ -35,7 +35,7 @@ _This library is still a work in progress! Consider yourself warned for breaking
 To use this library, install via opam:
 
 ```
-opam pin add ezpostgresql git+https://github.com/bobbypriambodo/ezpostgresql.git
+opam pin add ezpostgresql https://github.com/bobbypriambodo/ezpostgresql.git
 ```
 
 ## Examples
