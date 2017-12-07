@@ -25,6 +25,10 @@ let command ~query ?(params=[||]) conn =
       ()
     ) conn
 
+(* command_returning has the same semantic as all.
+   We're keeping them separate for clarity. *)
+let command_returning = all
+
 let finish conn =
   Lwt_preemptive.detach (fun (c : connection) ->
       c#finish
@@ -46,6 +50,8 @@ module Pool = struct
   let command ~query ?(params=[||]) pool =
     Lwt_pool.use pool (command ~query ~params)
 
+  let command_returning = all
+
 end
 
 module Transaction = struct
@@ -65,6 +71,7 @@ module Transaction = struct
   let one = one
   let all = all
   let command = command
+  let command_returning = all
 
 
   module Pool = struct

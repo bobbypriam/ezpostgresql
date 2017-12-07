@@ -89,6 +89,32 @@ let tests = [
       )
   ];
 
+  "command_returning", [
+    Alcotest_lwt.test_case "could run `command_returning` query" `Quick (fun _ _ ->
+        let%lwt conn = Ezpostgresql.connect ~conninfo () in
+
+        let%lwt res = Ezpostgresql.command_returning ~query:"
+          INSERT INTO person (name, age) VALUES ($1, $2), ($3, $4)
+          RETURNING name
+        " ~params:[| "Bobby"; (string_of_int 19); "Anne"; (string_of_int 17) |] conn in
+
+        let%lwt res2 = Ezpostgresql.command_returning ~query:"
+          UPDATE person SET age = $1 WHERE 1=1
+          RETURNING age
+        " ~params:[| (string_of_int 10) |] conn in
+
+        let%lwt () = Ezpostgresql.finish conn in
+        let () = tear_down () in
+        Lwt.return @@ (
+          Alcotest.(check (int)) "same int" 2 (Array.length res);
+          Alcotest.(check (string)) "same string" "Bobby" res.(0).(0);
+          Alcotest.(check (int)) "same int" 2 (Array.length res2);
+          Alcotest.(check (int)) "same int" 10 (int_of_string res2.(0).(0));
+          Alcotest.(check (int)) "same int" 10 (int_of_string res2.(1).(0));
+        )
+      )
+  ];
+
   "Pool.create", [
     Alcotest_lwt.test_case "could use connection from pool" `Quick (fun _ _ ->
         let pool = Ezpostgresql.Pool.create ~conninfo ~size:10 () in
@@ -131,7 +157,7 @@ let tests = [
   ];
 
   "Pool.command", [
-    Alcotest_lwt.test_case "could run `command` query" `Quick (fun _ _ ->
+    Alcotest_lwt.test_case "could run `command` query using pool" `Quick (fun _ _ ->
         let pool = Ezpostgresql.Pool.create ~conninfo ~size:10 () in
         let%lwt () = Ezpostgresql.Pool.command ~query:"
           CREATE TEMP TABLE test_data (some_num INTEGER NOT NULL)
@@ -145,6 +171,32 @@ let tests = [
         Lwt.return @@ Alcotest.(check (int)) "same int" 2 (int_of_string res.(0))
       )
   ];
+
+  "Pool.command_returning", [
+    Alcotest_lwt.test_case "could run `command_returning` query using pool" `Quick (fun _ _ ->
+        let pool = Ezpostgresql.Pool.create ~conninfo ~size:10 () in
+
+        let%lwt res = Ezpostgresql.Pool.command_returning ~query:"
+          INSERT INTO person (name, age) VALUES ($1, $2), ($3, $4)
+          RETURNING name
+        " ~params:[| "Bobby"; (string_of_int 19); "Anne"; (string_of_int 17) |] pool in
+
+        let%lwt res2 = Ezpostgresql.Pool.command_returning ~query:"
+          UPDATE person SET age = $1 WHERE 1=1
+          RETURNING age
+        " ~params:[| (string_of_int 10) |] pool in
+
+        let () = tear_down () in
+        Lwt.return @@ (
+          Alcotest.(check (int)) "same int" 2 (Array.length res);
+          Alcotest.(check (string)) "same string" "Bobby" res.(0).(0);
+          Alcotest.(check (int)) "same int" 2 (Array.length res2);
+          Alcotest.(check (int)) "same int" 10 (int_of_string res2.(0).(0));
+          Alcotest.(check (int)) "same int" 10 (int_of_string res2.(1).(0));
+        )
+      )
+  ];
+
 
   "Transaction", [
     Alcotest_lwt.test_case "could run `command` in transaction" `Quick (fun _ _ ->

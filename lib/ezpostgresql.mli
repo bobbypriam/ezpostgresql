@@ -15,6 +15,9 @@ val all : query:string -> ?params:string array -> connection -> string array arr
 (** Run a command (e.g. insert, update, delete) that expects no result. *)
 val command : query:string -> ?params:string array -> connection -> unit Lwt.t
 
+(** Run a command (e.g. insert, update, delete) that uses RETURNING clause. *)
+val command_returning: query:string -> ?params:string array -> connection -> string array array Lwt.t
+
 (** Close a connection (must be called after [connect]). *)
 val finish : connection -> unit Lwt.t
 
@@ -36,6 +39,9 @@ module Pool : sig
 
   (** Run a command (e.g. insert, update, delete) that expects no result using the pool. *)
   val command : query:string -> ?params:string array -> t -> unit Lwt.t
+
+  (** Run a command (e.g. insert, update, delete) that uses RETURNING clause using the pool. *)
+  val command_returning: query:string -> ?params:string array -> t -> string array array Lwt.t
 end
 
 
@@ -62,6 +68,9 @@ module Transaction : sig
 
   (** Run a command (e.g. insert, update, delete) that expects no result inside the transaction block. *)
   val command : query:string -> ?params:string array -> t -> unit Lwt.t
+
+  (** Run a command (e.g. insert, update, delete) that uses RETURNING clause inside the transaction block. *)
+  val command_returning: query:string -> ?params:string array -> t -> string array array Lwt.t
 
 
   (** Module to work with transactions using connection pools. For queries and commands, we can reuse
