@@ -1,6 +1,20 @@
 open Lwt.Infix
 
+
+
+module type QUERYABLE = sig
+  type t
+  val one : query:string -> ?params:string array -> t -> string array Lwt.t
+  val all : query:string -> ?params:string array -> t -> string array array Lwt.t
+  val command : query:string -> ?params:string array -> t -> unit Lwt.t
+  val command_returning : query:string -> ?params:string array -> t -> string array array Lwt.t
+end
+
 type connection = Postgresql.connection
+
+
+
+type t = connection
 
 let connect ~conninfo =
   Lwt_preemptive.detach (fun () ->
@@ -21,8 +35,7 @@ let all ~query ?(params=[||]) conn =
 
 let command ~query ?(params=[||]) conn =
   Lwt_preemptive.detach (fun (c : connection) ->
-      let _ = c#exec ~expect:[Postgresql.Command_ok] ~params query in
-      ()
+      c#exec ~expect:[Postgresql.Command_ok] ~params query |> ignore
     ) conn
 
 (* command_returning has the same semantic as all.
@@ -33,6 +46,8 @@ let finish conn =
   Lwt_preemptive.detach (fun (c : connection) ->
       c#finish
     ) conn
+
+
 
 module Pool = struct
 
@@ -54,6 +69,8 @@ module Pool = struct
 
 end
 
+
+
 module Transaction = struct
 
   type t = connection
@@ -72,6 +89,7 @@ module Transaction = struct
   let all = all
   let command = command
   let command_returning = all
+
 
 
   module Pool = struct
