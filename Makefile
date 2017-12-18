@@ -4,6 +4,9 @@ build:
 test:
 	jbuilder runtest
 
+doc:
+	jbuilder build @doc
+
 pin:
 	opam pin add .
 
