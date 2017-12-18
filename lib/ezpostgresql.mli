@@ -1,4 +1,8 @@
-(** Lwt-friendly wrapper for postgresql-ocaml which supports connection pooling. *)
+(** Lwt-friendly wrapper for postgresql-ocaml which supports connection pooling.
+
+    Note that the functions exposed in this library may throw exceptions in the
+    form of [Postgresql.Error e], where [e] is a [Postgresql.error]. See the
+    [postgresql-ocaml] documentation for more info. *)
 
 (** Interface for queryable entities, for example a connection, a pool, or a transaction. *)
 module type QUERYABLE = sig
