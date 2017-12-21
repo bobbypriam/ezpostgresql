@@ -1,8 +1,13 @@
-(** Lwt-friendly wrapper for postgresql-ocaml which supports connection pooling.
+(** Lwt-friendly wrapper for postgresql-ocaml which supports connection pooling. *)
 
-    Note that the functions exposed in this library may throw exceptions in the
-    form of [Postgresql.Error e], where [e] is a [Postgresql.error]. See the
-    [postgresql-ocaml] documentation for more info. *)
+
+(** The database connection. This is just an alias to [Postgresql.connection]. *)
+type connection = Postgresql.connection
+
+(** Database related errors. This is just an alias to [Postgresql.error]. *)
+type error = Postgresql.error
+
+
 
 (** Interface for queryable entities, for example a connection, a pool, or a transaction. *)
 module type QUERYABLE = sig
@@ -11,23 +16,18 @@ module type QUERYABLE = sig
   type t
 
   (** Run a query that expects a single row result. *)
-  val one : query:string -> ?params:string array -> t -> string array Lwt.t
+  val one : query:string -> ?params:string array -> t -> (string array option, error) result Lwt.t
 
   (** Run a query that expects multiple row result. *)
-  val all : query:string -> ?params:string array -> t -> string array array Lwt.t
+  val all : query:string -> ?params:string array -> t -> (string array array, error) result Lwt.t
 
   (** Run a command (e.g. insert, update, delete) that expects no result. *)
-  val command : query:string -> ?params:string array -> t -> unit Lwt.t
+  val command : query:string -> ?params:string array -> t -> (unit, error) result Lwt.t
 
   (** Run a command (e.g. insert, update, delete) that uses RETURNING clause. *)
-  val command_returning : query:string -> ?params:string array -> t -> string array array Lwt.t
+  val command_returning : query:string -> ?params:string array -> t -> (string array array, error) result Lwt.t
 
 end
-
-
-
-(** The database connection. This is just an alias to [Postgresql.connection]. *)
-type connection = Postgresql.connection
 
 
 
@@ -35,10 +35,10 @@ type connection = Postgresql.connection
 include QUERYABLE with type t = connection
 
 (** Connect to a database. [conninfo] is the usual Postgresql conninfo. *)
-val connect : conninfo:string -> unit -> connection Lwt.t
+val connect : conninfo:string -> unit -> (connection, error) result Lwt.t
 
 (** Close a connection (must be called after [connect]). *)
-val finish : connection -> unit Lwt.t
+val finish : connection -> (unit, error) result Lwt.t
 
 
 
@@ -62,20 +62,20 @@ module Transaction : sig
   include QUERYABLE
 
   (** Begin a transaction. *)
-  val begin_ : (t -> unit Lwt.t) -> connection -> unit Lwt.t
+  val begin_ : connection -> (t, error) result Lwt.t
 
   (** Commit an ongoing transaction (must be called after [begin_]). *)
-  val commit : t -> unit Lwt.t
+  val commit : t -> (unit, error) result Lwt.t
 
   (** Rollback an ongoing transaction (must be called after [begin_]). *)
-  val rollback : t -> unit Lwt.t
+  val rollback : t -> (unit, error) result Lwt.t
 
   (** Module to work with transactions using connection pools. For queries and commands, we can reuse
       the functions on [Transaction] module. *)
   module Pool : sig
 
     (** Begin the transaction on a pool. *)
-    val begin_ : (t -> unit Lwt.t) -> Pool.t -> unit Lwt.t
+    val begin_ : Pool.t -> (t, error) result Lwt.t
 
   end
 

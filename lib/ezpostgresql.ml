@@ -2,15 +2,16 @@ open Lwt.Infix
 
 
 
+type connection = Postgresql.connection
+type error = Postgresql.error
+
 module type QUERYABLE = sig
   type t
-  val one : query:string -> ?params:string array -> t -> string array Lwt.t
-  val all : query:string -> ?params:string array -> t -> string array array Lwt.t
-  val command : query:string -> ?params:string array -> t -> unit Lwt.t
-  val command_returning : query:string -> ?params:string array -> t -> string array array Lwt.t
+  val one : query:string -> ?params:string array -> t -> (string array option, error) result Lwt.t
+  val all : query:string -> ?params:string array -> t -> (string array array, error) result Lwt.t
+  val command : query:string -> ?params:string array -> t -> (unit, error) result Lwt.t
+  val command_returning : query:string -> ?params:string array -> t -> (string array array, error) result Lwt.t
 end
-
-type connection = Postgresql.connection
 
 
 
@@ -18,24 +19,34 @@ type t = connection
 
 let connect ~conninfo =
   Lwt_preemptive.detach (fun () ->
-      new Postgresql.connection ~conninfo ()
+      try Ok (new Postgresql.connection ~conninfo ())
+      with Postgresql.Error e -> Error e
     )
 
 let one ~query ?(params=[||]) conn =
   Lwt_preemptive.detach (fun (c : connection) ->
-      let result = c#exec ~expect:[Postgresql.Tuples_ok] ~params query in
-      result#get_tuple 0
+      try
+        let result = c#exec ~expect:[Postgresql.Tuples_ok] ~params query in
+          Ok (Some (result#get_tuple 0))
+      with
+      | Postgresql.Error (Postgresql.Tuple_out_of_range (_, _)) -> Ok None
+      | Postgresql.Error e -> Error e
     ) conn
 
 let all ~query ?(params=[||]) conn =
   Lwt_preemptive.detach (fun (c : connection) ->
-      let result = c#exec ~expect:[Postgresql.Tuples_ok] ~params query in
-      result#get_all
+      try
+        let result = c#exec ~expect:[Postgresql.Tuples_ok] ~params query in
+        Ok result#get_all
+      with Postgresql.Error e -> Error e
     ) conn
 
 let command ~query ?(params=[||]) conn =
   Lwt_preemptive.detach (fun (c : connection) ->
-      c#exec ~expect:[Postgresql.Command_ok] ~params query |> ignore
+      try
+        c#exec ~expect:[Postgresql.Command_ok] ~params query |> ignore;
+        Ok ()
+      with Postgresql.Error e -> Error e
     ) conn
 
 (* command_returning has the same semantic as all.
@@ -44,7 +55,8 @@ let command_returning = all
 
 let finish conn =
   Lwt_preemptive.detach (fun (c : connection) ->
-      c#finish
+      try Ok c#finish
+      with Postgresql.Error e -> Error e
     ) conn
 
 
@@ -54,7 +66,12 @@ module Pool = struct
   type t = connection Lwt_pool.t
 
   let create ~conninfo ~size () =
-    Lwt_pool.create size (connect ~conninfo)
+    let open Lwt.Infix in
+    Lwt_pool.create size (fun () ->
+        connect ~conninfo () >>= function
+        | Ok conn -> Lwt.return conn
+        | Error e -> Lwt.fail @@ Postgresql.Error e
+      )
 
   let one ~query ?(params=[||]) pool =
     Lwt_pool.use pool (one ~query ~params)
@@ -75,9 +92,11 @@ module Transaction = struct
 
   type t = connection
 
-  let begin_ (f : t -> unit Lwt.t) (conn : connection) =
-    command ~query:"BEGIN" conn >>= fun () ->
-    f conn
+  let begin_ (conn : connection) =
+    command ~query:"BEGIN" conn >>= fun res ->
+    match res with
+    | Ok () -> Ok conn |> Lwt.return
+    | Error e -> Error e |> Lwt.return
 
   let commit (trx : t) =
     command ~query:"COMMIT" trx
@@ -94,8 +113,8 @@ module Transaction = struct
 
   module Pool = struct
 
-    let begin_ (f : t -> unit Lwt.t) pool =
-      Lwt_pool.use pool (begin_ f)
+    let begin_ pool =
+      Lwt_pool.use pool begin_
 
   end
 
