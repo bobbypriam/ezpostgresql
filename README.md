@@ -34,12 +34,12 @@ The name was inspired by the awesome [Ezjsonm](https://github.com/mirage/ezjsonm
 
 ## Usage
 
-_This library is still a work in progress! Consider yourself warned for breaking changes._
+_This library is still in version 0.x! Consider yourself warned for breaking changes._
 
 To use this library, install via opam:
 
 ```
-opam pin add ezpostgresql https://github.com/bobbypriambodo/ezpostgresql.git
+opam install ezpostgresql
 ```
 
 ## Examples
