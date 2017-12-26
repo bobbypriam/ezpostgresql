@@ -27,7 +27,7 @@ let one ~query ?(params=[||]) conn =
   Lwt_preemptive.detach (fun (c : connection) ->
       try
         let result = c#exec ~expect:[Postgresql.Tuples_ok] ~params query in
-          Ok (Some (result#get_tuple 0))
+        Ok (Some (result#get_tuple 0))
       with
       | Postgresql.Error (Postgresql.Tuple_out_of_range (_, _)) -> Ok None
       | Postgresql.Error e -> Error e
@@ -70,7 +70,8 @@ module Pool = struct
     Lwt_pool.create size (fun () ->
         connect ~conninfo () >>= function
         | Ok conn -> Lwt.return conn
-        | Error e -> Lwt.fail @@ Postgresql.Error e
+        | Error e ->
+          failwith @@ "Ezpostgresql: Failed to connect. Conninfo=" ^ conninfo
       )
 
   let one ~query ?(params=[||]) pool =
