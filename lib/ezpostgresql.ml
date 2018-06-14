@@ -70,7 +70,7 @@ module Pool = struct
     Lwt_pool.create size (fun () ->
         connect ~conninfo () >>= function
         | Ok conn -> Lwt.return conn
-        | Error e ->
+        | Error _e ->
           failwith @@ "Ezpostgresql: Failed to connect. Conninfo=" ^ conninfo
       )
 

@@ -2,7 +2,7 @@ build:
 	jbuilder build @install
 
 test:
-	jbuilder runtest
+	jbuilder runtest --dev
 
 doc:
 	jbuilder build @doc
