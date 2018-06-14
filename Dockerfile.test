@@ -1,8 +1,7 @@
-FROM ocaml/opam:alpine
+FROM ocaml/opam2:alpine
 WORKDIR ezpostgresql
 ADD ezpostgresql.opam .
 RUN sudo apk update && \
-    opam update && \
     opam pin add -yn ezpostgresql . && \
     opam depext ezpostgresql && \
     opam install --deps-only --build-test ezpostgresql && \
