@@ -2,11 +2,11 @@ FROM ocaml/opam:alpine
 WORKDIR ezpostgresql
 ADD ezpostgresql.opam .
 RUN sudo apk update && \
+    opam update && \
     opam pin add -yn ezpostgresql . && \
     opam depext ezpostgresql && \
-    opam install --deps-only ezpostgresql && \
+    opam install --deps-only --build-test ezpostgresql && \
     sudo rm -rf /var/cache/apk/*
-RUN opam install alcotest alcotest-lwt
 ADD . .
 RUN sudo chown -R opam:nogroup .
 CMD opam config exec make test
