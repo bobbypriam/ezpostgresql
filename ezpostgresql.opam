@@ -1,4 +1,4 @@
-opam-version: "2.0"
+opam-version: "1.2"
 name: "ezpostgresql"
 maintainer: "Bobby Priambodo <bobby.priambodo@gmail.com>"
 authors: ["Bobby Priambodo <bobby.priambodo@gmail.com>"]
@@ -19,4 +19,3 @@ depends: [
   "alcotest"          {test & >= "0.8"}
   "alcotest-lwt"      {test & >= "0.8"}
 ]
-run-test: ["jbuilder" "runtest" "-p" name "-j" jobs]
