@@ -3,7 +3,7 @@
 (executable (
   (name test)
   (libraries (ezpostgresql alcotest alcotest-lwt))
-  (preprocess (pps (lwt.ppx)))
+  (preprocess (pps (lwt_ppx)))
 ))
 
 (alias (

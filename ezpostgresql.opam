@@ -12,6 +12,7 @@ depends: [
   "jbuilder"          {build & >= "1.0+beta14"}
   "lwt"               {>= "3.0"}
   "postgresql"        {>= "4.0"}
+  "lwt_ppx"           {test}
   "alcotest"          {test & >= "0.8"}
   "alcotest-lwt"      {test & >= "0.8"}
 ]
