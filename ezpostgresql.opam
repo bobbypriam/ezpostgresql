@@ -12,7 +12,7 @@ build: [
   ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "jbuilder"          {build & >= "1.0+beta14"}
+  "dune"              {build}
   "lwt"               {>= "3.0"}
   "postgresql"        {>= "4.0"}
   "lwt_ppx"           {test}
