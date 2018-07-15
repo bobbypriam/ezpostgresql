@@ -23,31 +23,49 @@ let connect ~conninfo =
       with Postgresql.Error e -> Error e
     )
 
-let one ~query ?(params=[||]) conn =
-  Lwt_preemptive.detach (fun (c : connection) ->
-      try
-        let result = c#exec ~expect:[Postgresql.Tuples_ok] ~params query in
-        Ok (Some (result#get_tuple 0))
-      with
-      | Postgresql.Error (Postgresql.Tuple_out_of_range (_, _)) -> Ok None
-      | Postgresql.Error e -> Error e
-    ) conn
+
+let rec wait_for_result (conn : connection) =
+  conn#consume_input;
+  if conn#is_busy then
+    Lwt_unix.yield () >>= fun () -> wait_for_result conn
+  else
+    match conn#get_result with
+    | None -> Lwt.return (Ok None)
+    | Some result ->
+      (* Free up the connection. *)
+      assert (conn#get_result = None);
+      Lwt.return (Ok (Some result))
+
+let send_query_and_wait query params (conn : connection) =
+  Lwt.catch
+    (fun () ->
+       conn#send_query ~params query;
+       wait_for_result conn)
+    (function
+       | Postgresql.Error e -> Lwt.return (Error e)
+       | e -> Lwt.fail e)
+
+
+
+let one ~query ?(params=[||]) (conn : connection) =
+  let open Lwt_result.Infix in
+  let promise = send_query_and_wait query params conn in
+  print_endline "Does not block";
+  promise >|= function
+  | None -> None
+  | Some result ->
+    try Some (result#get_tuple 0) with
+    | Postgresql.Error Postgresql.Tuple_out_of_range (_, _) -> None
 
 let all ~query ?(params=[||]) conn =
-  Lwt_preemptive.detach (fun (c : connection) ->
-      try
-        let result = c#exec ~expect:[Postgresql.Tuples_ok] ~params query in
-        Ok result#get_all
-      with Postgresql.Error e -> Error e
-    ) conn
+  let open Lwt_result.Infix in
+  send_query_and_wait query params conn >|= function
+  | None -> [||]
+  | Some result -> result#get_all
 
 let command ~query ?(params=[||]) conn =
-  Lwt_preemptive.detach (fun (c : connection) ->
-      try
-        c#exec ~expect:[Postgresql.Command_ok] ~params query |> ignore;
-        Ok ()
-      with Postgresql.Error e -> Error e
-    ) conn
+  let open Lwt_result.Infix in
+  send_query_and_wait query params conn >|= fun _ -> ()
 
 (* command_returning has the same semantic as all.
    We're keeping them separate for clarity. *)
