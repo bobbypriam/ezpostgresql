@@ -10,4 +10,4 @@ RUN sudo apk update && \
     sudo rm -rf /var/cache/apk/*
 ADD . .
 RUN sudo chown -R opam:nogroup .
-CMD opam config exec make test
+CMD opam config exec dune runtest
