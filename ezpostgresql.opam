@@ -8,8 +8,8 @@ dev-repo: "git+https://github.com/bobbypriambodo/ezpostgresql"
 doc: "https://bobbypriambodo.github.io/ezpostgresql/"
 license: ["MIT"]
 build: [
-  ["jbuilder" "subst"] {pinned}
-  ["jbuilder" "build" "-p" name "-j" jobs]
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
   "dune"              {build}
