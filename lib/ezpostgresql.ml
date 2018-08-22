@@ -49,9 +49,7 @@ let send_query_and_wait query params (conn : connection) =
 
 let one ~query ?(params=[||]) (conn : connection) =
   let open Lwt_result.Infix in
-  let promise = send_query_and_wait query params conn in
-  print_endline "Does not block";
-  promise >|= function
+  send_query_and_wait query params conn >|= function
   | None -> None
   | Some result ->
     try Some (result#get_tuple 0) with
