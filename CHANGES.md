@@ -1,3 +1,7 @@
+### 0.2.1 (2018-08-22)
+
+* Remove silly debug print
+
 ### 0.2.0 (2018-07-15)
 
 * Upgrade to Dune 1.0.0
