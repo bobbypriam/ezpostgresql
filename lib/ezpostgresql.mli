@@ -1,4 +1,5 @@
 (** Lwt-friendly wrapper for postgresql-ocaml which supports connection pooling. *)
+open Result
 
 
 (** The database connection. This is just an alias to [Postgresql.connection]. *)

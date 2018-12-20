@@ -2,4 +2,4 @@
   (name ezpostgresql)
   (public_name ezpostgresql)
   (wrapped false)
-  (libraries postgresql lwt.unix))
+  (libraries postgresql lwt.unix result))
