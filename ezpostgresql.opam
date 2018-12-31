@@ -18,4 +18,5 @@ depends: [
   "lwt_ppx"           {test}
   "alcotest"          {test & >= "0.8"}
   "alcotest-lwt"      {test & >= "0.8"}
+  "result"
 ]

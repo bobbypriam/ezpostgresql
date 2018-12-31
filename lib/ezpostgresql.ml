@@ -1,5 +1,5 @@
 open Lwt.Infix
-
+open Result
 
 
 type connection = Postgresql.connection
