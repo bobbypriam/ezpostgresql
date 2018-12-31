@@ -96,7 +96,7 @@ let () =
     (* Handling of errors. `operation_result` has the type `('a, Postgresql.error) result`. *)
     match operation_result with
     | Ok () -> print_endline "Operations were successful!" |> Lwt.return
-    | Error e -> print_endline "An error occurred." |> Lwt.return
+    | Error e -> print_endline (Postgresql.string_of_error e)  |> Lwt.return
   )
 ```
 
@@ -149,7 +149,7 @@ let () =
     (* Handling of errors. `operation_result` has the type `('a, Postgresql.error) result`. *)
     match operation_result with
     | Ok () -> print_endline "Operations were successful!" |> Lwt.return
-    | Error e -> print_endline "An error occurred." |> Lwt.return
+    | Error e -> print_endline (Postgresql.string_of_error e)  |> Lwt.return
   )
 ```
 
@@ -196,6 +196,6 @@ let () =
     (* Handling of errors. *)
     match operation_result with
     | Ok () -> print_endline "Operations were successful!" |> Lwt.return
-    | Error e -> print_endline "An error occurred." |> Lwt.return
+    | Error e -> print_endline (Postgresql.string_of_error e)  |> Lwt.return
   )
 ```
