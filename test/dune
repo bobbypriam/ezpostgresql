@@ -1,12 +1,4 @@
-(executable
+(test
  (name test)
  (libraries ezpostgresql alcotest alcotest-lwt)
- (preprocess
-  (pps lwt_ppx)))
-
-(alias
- (name runtest)
- (deps
-  (:< test.exe))
- (action
-  (run %{<})))
+ (preprocess (pps lwt_ppx)))
