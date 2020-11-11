@@ -1,0 +1,4 @@
+(test
+ (name test)
+ (libraries ezpostgresql alcotest alcotest-lwt)
+ (preprocess (pps lwt_ppx)))
