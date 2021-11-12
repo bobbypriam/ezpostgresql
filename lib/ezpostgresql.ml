@@ -3,7 +3,14 @@ open Result
 
 
 type connection = Postgresql.connection
-type error = Postgresql.error
+type error =
+  | Field_out_of_range of int * int
+  | Tuple_out_of_range of int * int
+  | Binary
+  | Connection_failure of string
+  | Unexpected_status of Postgresql.result_status * string * (Postgresql.result_status list)
+  | Cancel_failure of string
+  | Result_error of string
 
 module type QUERYABLE = sig
   type t
@@ -13,14 +20,31 @@ module type QUERYABLE = sig
   val command_returning : query:string -> ?params:string array -> t -> (string array array, error) result Lwt.t
 end
 
+let wrap_pg_error (pg_err : Postgresql.error) : error =
+  match pg_err with
+  | Field_out_of_range (x, y) -> Field_out_of_range (x, y)
+  | Tuple_out_of_range (x, y) -> Tuple_out_of_range (x, y)
+  | Binary -> Binary
+  | Connection_failure msg -> Connection_failure msg
+  | Unexpected_status (x, y, z) -> Unexpected_status (x, y, z)
+  | Cancel_failure msg -> Cancel_failure msg
 
+let string_of_error e =
+  match e with
+  | Field_out_of_range (x, y) -> Postgresql.string_of_error (Postgresql.Field_out_of_range (x, y))
+  | Tuple_out_of_range (x, y) -> Postgresql.string_of_error (Postgresql.Tuple_out_of_range (x, y))
+  | Binary -> Postgresql.string_of_error Postgresql.Binary
+  | Connection_failure msg -> Postgresql.string_of_error (Postgresql.Connection_failure msg)
+  | Unexpected_status (x, y, z) -> Postgresql.string_of_error (Postgresql.Unexpected_status (x, y, z))
+  | Cancel_failure msg -> Postgresql.string_of_error (Postgresql.Cancel_failure msg)
+  | Result_error msg -> msg
 
 type t = connection
 
 let connect ~conninfo =
   Lwt_preemptive.detach (fun () ->
       try Ok (new Postgresql.connection ~conninfo ())
-      with Postgresql.Error e -> Error e
+      with Postgresql.Error e -> Error (wrap_pg_error e)
     )
 
 
@@ -42,7 +66,7 @@ let send_query_and_wait query params (conn : connection) =
        conn#send_query ~params query;
        wait_for_result conn)
     (function
-       | Postgresql.Error e -> Lwt.return (Error e)
+       | Postgresql.Error e -> Lwt.return (Error (wrap_pg_error e))
        | e -> Lwt.fail e)
 
 
@@ -63,7 +87,13 @@ let all ~query ?(params=[||]) conn =
 
 let command ~query ?(params=[||]) conn =
   let open Lwt_result.Infix in
-  send_query_and_wait query params conn >|= fun _ -> ()
+  send_query_and_wait query params conn >>= fun result ->
+  match result with
+  | Some result ->
+    if result#status = Command_ok || result#status = Tuples_ok
+    then Lwt.return (Ok ())
+    else  Lwt.return (Error (Result_error result#error))
+  | None -> Lwt.return (Ok ())
 
 (* command_returning has the same semantic as all.
    We're keeping them separate for clarity. *)
@@ -72,7 +102,7 @@ let command_returning = all
 let finish conn =
   Lwt_preemptive.detach (fun (c : connection) ->
       try Ok c#finish
-      with Postgresql.Error e -> Error e
+      with Postgresql.Error e -> Error (wrap_pg_error e)
     ) conn
 
 
