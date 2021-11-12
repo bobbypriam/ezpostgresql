@@ -5,10 +5,18 @@ open Result
 (** The database connection. This is just an alias to [Postgresql.connection]. *)
 type connection = Postgresql.connection
 
-(** Database related errors. This is just an alias to [Postgresql.error]. *)
-type error = Postgresql.error
+(** Database related errors. *)
+type error =
+  | Field_out_of_range of int * int
+  | Tuple_out_of_range of int * int
+  | Binary
+  | Connection_failure of string
+  | Unexpected_status of Postgresql.result_status * string * (Postgresql.result_status list)
+  | Cancel_failure of string
+  | Result_error of string
 
-
+(** [string_of_error error] convert [error] to a human-readable message. *)
+val string_of_error : error -> string
 
 (** Interface for queryable entities, for example a connection, a pool, or a transaction. *)
 module type QUERYABLE = sig
