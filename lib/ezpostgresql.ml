@@ -90,7 +90,7 @@ let command ~query ?(params=[||]) conn =
   send_query_and_wait query params conn >>= fun result ->
   match result with
   | Some result ->
-    if result#status = Command_ok
+    if result#status = Command_ok || result#status = Tuples_ok
     then Lwt.return (Ok ())
     else  Lwt.return (Error (Result_error result#error))
   | None -> Lwt.return (Ok ())
